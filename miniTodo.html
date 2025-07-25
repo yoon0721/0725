@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Todo List</title>
+  </head>
+  <body>
+    <h1>Todo</h1>
+
+    <div>
+      <input type="text" id="todoContent" placeholder="할 일을 입력하세요" />
+      <button onclick="insertTodo();">등록</button>
+    </div>
+
+    <table border="1">
+      <thead>
+        <tr>
+          <th>내용</th>
+          <th>날짜</th>
+          <th>넘버</th>
+          <th>✅</th>
+          <th>버튼</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <script>
+      // todo List
+      function loadTodos() {
+        const url = 'http://127.0.0.1:8080/api/todo';
+        fetch(url)
+          .then((resp) => {
+            if (!resp.ok) throw new Error('서버 오류');
+            return resp.json();
+          })
+          .then((data) => {
+            const tbody = document.querySelector('tbody');
+            tbody.innerHTML = '';
+
+            data.forEach((todo) => {
+              const tr = document.createElement('tr');
+
+              let completeIcon = '';
+              if (todo.complete === 'Y') {
+                completeIcon = '✅';
+              } else completeIcon = '🔥';
+
+              tr.innerHTML = `
+              <td>${todo.content}</td>
+              <td>${todo.createAt}</td>
+              <td>${todo.id}</td>
+              <td>${completeIcon}</td>
+              <td><button onclick="deleteTodo(${todo.id})">성공</button></td
+            `;
+              tbody.appendChild(tr);
+            });
+          })
+          .catch((err) => {
+            console.error('불러오기 실패:', err);
+          });
+      }
+      loadTodos();
+
+      // 등록
+      function insertTodo() {
+        const content = document.querySelector('#todoContent').value;
+        const url = 'http://127.0.0.1:8080/api/todo/insert';
+
+        fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content }),
+        })
+          .then((resp) => {
+            if (!resp.ok) throw new Error('등록 실패');
+            return resp.json();
+          })
+          .then((result) => {
+            if (result === 1) {
+              content.value = '';
+              loadTodos();
+            } else {
+              alert('등록 실패');
+            }
+          })
+          .catch((err) => {
+            console.error('등록 에러:', err);
+          });
+      }
+
+      // 삭제
+      function deleteTodo(id) {
+        const url = `http://127.0.0.1:8080/api/todo/${id}`;
+        const option = {
+          method: 'DELETE',
+        };
+
+        fetch(url, option)
+          .then((resp) => resp.json())
+          .then((result) => {
+            if (result == 1) {
+              loadTodos();
+            } else {
+              alert('삭제 실패');
+            }
+          })
+
+          .catch((err) => {
+            console.error('삭제 오류:', err);
+          });
+      }
+    </script>
+  </body>
+</html>
